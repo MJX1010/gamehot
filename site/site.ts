@@ -70,7 +70,7 @@ export const SITE = {
   /** 中国大陆网站的公安备案信息（选填），填了显示在侧栏底部和“我的”页底部。 */
   psb: null as string | null,
   /** 源码的 GitHub 仓库地址（选填），填了就在侧栏底部和“我的”页底部显示“GitHub 开源”。 */
-  github: "https://github.com/MJX1010/GameHot" as string | null,
+  github: "https://github.com/MJX1010/gamehot" as string | null,
   /** 结构化数据里的网站运营者（搜索引擎用）。 */
   organization: {
     name: "GameHot",

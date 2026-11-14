@@ -25,7 +25,7 @@
 
 ## 这是什么
 
-[GameHot](https://github.com/MJX1010/GameHot) 面向**游戏资讯**和**游戏开发**（引擎、工具、技术美术、工作室动态）。从中英文媒体、门户列表、开发者博客、平台商店等信源抓取，用模型筛一遍、打分精选，把同一件事的多篇报道归并，每天早上出日报。
+[GameHot](https://github.com/MJX1010/gamehot) 面向**游戏资讯**和**游戏开发**（引擎、工具、技术美术、工作室动态）。从中英文媒体、门户列表、开发者博客、平台商店等信源抓取，用模型筛一遍、打分精选，把同一件事的多篇报道归并，每天早上出日报。
 
 本仓库在 [AIHOT](https://github.com/KKKKhazix/AIHOT) 开源框架上定制；框架能力（采集、精选、聚簇、热度、后台）见文末折叠区，此处不重复。
 
@@ -47,7 +47,7 @@
 需要 [Docker](https://docs.docker.com/get-docker/)，以及一个 OpenAI 兼容的模型 API Key（DeepSeek、千问、智谱等均可）。
 
 ```bash
-git clone https://github.com/MJX1010/GameHot.git
+git clone https://github.com/MJX1010/gamehot.git
 cd GameHot
 node scripts/init-env.ts --llm-key <你的模型 API Key>
 docker compose up -d --build
