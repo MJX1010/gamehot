@@ -232,8 +232,8 @@ http.createServer((req, res) => {
 | 平台官方 | PlayStation Blog、Xbox Wire、Steam News、任天堂官网更新（日本，已过滤招聘类） | T1 / editorial |
 | 行业与商业 | GamesIndustry.biz、Game Developer、Game File、Aftermath、Deconstructor of Fun、MobileGamer.biz | T2 / editorial |
 | 欧美 / 日本媒体 | IGN、Eurogamer、Nintendo Life、4Gamer.net、AUTOMATON（日文）、Gematsu | T2 / editorial |
-| 中文媒体 | 机核、触乐、游研社、GameLook、GameRes 及门户列表 | T2 / editorial |
-| 引擎与图形技术 | Unity/Unreal/Godot/Cocos 官方与发布、Blender 新闻与开发博客、Spine/Marmoset、Stride/O3DE/Phaser/Babylon/libGDX、AWS Game Tech、DirectX/GPUOpen 与图形博客 | T1 / T1_5 / editorial |
+| 中文媒体 | 机核、触乐、游研社、IGN 中国、GameLook、GameRes 及门户列表；开发博客如雨松MOMO、循迹研究室 | T2 / T1_5 / editorial |
+| 引擎与图形技术 | Unity/Unreal/Godot/Cocos 官方与发布、Blender 新闻与开发博客、Spine/Marmoset/Wwise/YooAsset、Stride/O3DE/Phaser/Babylon/libGDX、Catlike Coding/Cyanilux/xoofx、AWS Game Tech、DirectX/GPUOpen 与图形博客 | T1 / T1_5 / editorial |
 | 商店热度 | Steam 新发行/精选、Epic 免费游戏、TapTap 榜单 | T2 / hot_signal |
 
 ## 抓取频率

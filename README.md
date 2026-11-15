@@ -36,9 +36,9 @@
 | **玩家向** | 发行与更新、行业政策、电竞与社区、平台商店动态 |
 | **开发向** | 引擎/工具、技术与美术分享、工作室与商务 |
 | **分类** | 发行 · 行业 · 电竞 · 工具引擎 · 工作室 · 技术美术 |
-| **信源示例** | 机核/触乐/游研社、游民·3DM 等门户列表；任天堂/PlayStation/Xbox 官方；Game File/Aftermath/4Gamer/AUTOMATON 等媒体；GDC/80 Level/Unity·Unreal·Godot·Cocos/Blender/Spine/Stride·O3DE·Phaser·Babylon/DirectX/JCGT 等引擎与工具源；Steam/Epic/TapTap 等平台信号 |
+| **信源示例** | 机核/触乐/游研社、游民·3DM 等门户列表；任天堂/PlayStation/Xbox 官方；Game File/Aftermath/4Gamer/AUTOMATON 等媒体；GDC/80 Level/Unity·Unreal·Godot·Cocos/Blender/Spine/Wwise/YooAsset/Stride·O3DE·Phaser·Babylon/DirectX/JCGT、雨松MOMO/循迹研究室/Catlike Coding/Cyanilux/xoofx 等引擎与工具源；IGN 中国等中文媒体；Steam/Epic/TapTap 等平台信号 |
 
-商店营销类信源多为热度信号（降权），一手资讯仍优先编辑向源。当前种子 87 条，见 [`industry/sources.json`](industry/sources.json)。
+商店营销类信源多为热度信号（降权），一手资讯仍优先编辑向源。当前种子 95 条，见 [`industry/sources.json`](industry/sources.json)。
 
 已关闭 AI 行业专属模块（模型榜、Codex 重置监控）。
 

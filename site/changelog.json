@@ -1,6 +1,16 @@
 {
-  "latestVersion": "2026-11-03T12:00",
+  "latestVersion": "2026-11-16T00:10",
   "releases": [
+    {
+      "date": "2026-11-16",
+      "time": "00:10",
+      "kind": "功能",
+      "title": "补充书签与笔记中的游戏开发信源",
+      "body": [
+        "从 Chrome GameDev 书签和 D:\\Notes 链接笔记中筛出可稳定抓取的信源，新增雨松MOMO、循迹研究室、Catlike Coding、YooAsset、Wwise、IGN 中国、Cyanilux、xoofx 共 8 条。",
+        "种子由 87 条增至 95 条。"
+      ]
+    },
     {
       "date": "2026-11-03",
       "time": "12:00",

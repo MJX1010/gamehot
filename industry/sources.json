@@ -1967,6 +1967,181 @@
           "initialBackfillLimit": 8
         }
       }
+    },
+    {
+      "id": "rss-xuanyusong",
+      "name": "雨松MOMO",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.xuanyusong.com/feed",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": [
+        "开发",
+        "中文",
+        "Unity"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-imzlp",
+      "name": "循迹研究室",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://imzlp.com/atom.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": [
+        "开发",
+        "中文",
+        "Unreal"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-catlikecoding",
+      "name": "Catlike Coding",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://catlikecoding.com/unity/tutorials/feed.atom",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": [
+        "开发",
+        "Unity",
+        "教程"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-yooasset",
+      "name": "YooAsset Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.yooasset.com/blog/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": [
+        "官方",
+        "工具",
+        "Unity",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-audiokinetic",
+      "name": "Audiokinetic / Wwise",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.audiokinetic.com/en/rss-feed/?lang=en_US",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "官方",
+        "工具",
+        "音频"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-ign-cn",
+      "name": "IGN 中国",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.ign.com.cn/feed.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "媒体",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-cyanilux",
+      "name": "Cyanilux",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.cyanilux.com/index.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": [
+        "开发",
+        "Unity",
+        "技术美术"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-xoofx",
+      "name": "xoofx",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://xoofx.github.io/feed",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "tags": [
+        "开发",
+        "引擎"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
     }
   ]
 }
