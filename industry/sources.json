@@ -2142,6 +2142,166 @@
       ],
       "site_fulltext": false,
       "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-apple-developer-cn",
+      "name": "Apple 开发者动态（中文）",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://developer.apple.com/cn/news/rss/news.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "发布",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-apple-releases",
+      "name": "Apple 系统与开发工具发布",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://developer.apple.com/news/releases/rss/releases.rss",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "发布"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-android-developers",
+      "name": "Android Developers Blog",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://developer.android.com/blog/atom.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "发布"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-android-studio",
+      "name": "Android Studio 发布",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://androidstudio.googleblog.com/feeds/posts/default",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "发布",
+        "工具"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-unity-supported",
+      "name": "Unity Editor · Supported",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://unity.com/releases/editor/supported-releases.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "owner_entity_id": "unity",
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "官方",
+        "引擎",
+        "发布"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "rss-unity-lts",
+      "name": "Unity Editor · LTS",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://unity.com/releases/editor/lts-releases.xml",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        }
+      },
+      "tier": "T1",
+      "owner_entity_id": "unity",
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "官方",
+        "引擎",
+        "发布"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "web-cocos-news",
+      "name": "Cocos 新闻",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.cocos.com/news",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "itemSelector": "a.control-news-item",
+        "linkSelector": "a.control-news-item",
+        "titleSelector": ".control-news-item__title",
+        "allowUrlPrefixes": [
+          "https://www.cocos.com/post/"
+        ],
+        "publishedAtSelector": ".control-news-item__date"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "官方",
+        "引擎",
+        "发布",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
     }
   ]
 }

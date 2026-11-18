@@ -1,6 +1,16 @@
 {
-  "latestVersion": "2026-11-16T00:10",
+  "latestVersion": "2026-11-18T20:25",
   "releases": [
+    {
+      "date": "2026-11-18",
+      "time": "20:25",
+      "kind": "功能",
+      "title": "补充平台与引擎官方版本发布信源",
+      "body": [
+        "新增 Apple 开发者动态（中文）、Apple 系统与开发工具发布、Android Developers Blog、Android Studio 发布，以及 Unity 编辑器 Supported / LTS 版本订阅和 Cocos 官方新闻页。",
+        "种子由 95 条增至 102 条。"
+      ]
+    },
     {
       "date": "2026-11-16",
       "time": "00:10",
