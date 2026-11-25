@@ -1,10 +1,20 @@
 {
-  "latestVersion": "2026-11-18T20:25",
+  "latestVersion": "2026-11-26T01:00",
   "releases": [
+    {
+      "date": "2026-11-26",
+      "time": "01:00",
+      "kind": "更新",
+      "title": "同步 AIHOT 引擎，保留 GameHot 行业配置",
+      "body": [
+        "同步上游 72b0483 的归组、采集、媒体处理、任务状态、SEO 与推送优化。",
+        "保留 GameHot 品牌及 102 条游戏与开发信源，补齐新站点配置和游戏英文词表；升级前请备份数据库并按部署文档迁移。"
+      ]
+    },
     {
       "date": "2026-11-18",
       "time": "20:25",
-      "kind": "功能",
+      "kind": "更新",
       "title": "补充平台与引擎官方版本发布信源",
       "body": [
         "新增 Apple 开发者动态（中文）、Apple 系统与开发工具发布、Android Developers Blog、Android Studio 发布，以及 Unity 编辑器 Supported / LTS 版本订阅和 Cocos 官方新闻页。",
@@ -14,7 +24,7 @@
     {
       "date": "2026-11-16",
       "time": "00:10",
-      "kind": "功能",
+      "kind": "更新",
       "title": "补充书签与笔记中的游戏开发信源",
       "body": [
         "从 Chrome GameDev 书签和 D:\\Notes 链接笔记中筛出可稳定抓取的信源，新增雨松MOMO、循迹研究室、Catlike Coding、YooAsset、Wwise、IGN 中国、Cyanilux、xoofx 共 8 条。",

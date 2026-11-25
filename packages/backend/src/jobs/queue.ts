@@ -6,8 +6,10 @@ import { PgBoss, type SendOptions, type WorkOptions } from "pg-boss";
 import { config } from "../config.ts";
 import { sql, type Db } from "../db.ts";
 import { shutdownSignal } from "../lib/shutdown.ts";
+import { failureKind } from "../providers/receipts.ts";
 import { logError } from "../lib/log-error.ts";
 import { serverModules, type ModuleQueue } from "../modules.ts";
+import { runOwner } from "./runs.ts";
 export { shutdownSignal } from "../lib/shutdown.ts";
 
 let boss: PgBoss | null = null;
@@ -39,6 +41,15 @@ export const QUEUES = {
   republishSource: "publication.republish-source",
   prepareMedia: "media.prepare",
 } as const satisfies Record<string, QueueName>;
+
+/**
+ * Queue order (pg-boss serves higher priority first): live work before history, so a new source's
+ * first import or a backfill never holds up today's news; discussion evidence waits behind reports
+ * in the serial grouping queue, history behind both.
+ */
+export function articlePriority({ historical, signal = false }: { historical: boolean; signal?: boolean }): number {
+  return historical ? -2 : signal ? -1 : 0;
+}
 
 export type QueueOptions = NonNullable<Parameters<PgBoss["createQueue"]>[1]>;
 
@@ -182,14 +193,17 @@ export async function workModuleQueues(boss: PgBoss): Promise<void> {
 // Scheduled task bookkeeping: every run leaves a row, so operators see the latest result.
 
 export async function recordRun<T>(job: string, fn: () => Promise<T>): Promise<T> {
-  const [row] = await sql<{ id: number }[]>`INSERT INTO job_runs (job) VALUES (${job}) RETURNING id`;
+  const [row] = await sql<{ id: number }[]>`INSERT INTO job_runs (job, detail) VALUES (${job}, ${sql.json({ owner: await runOwner() })}) RETURNING id`;
   try {
     const result = await fn();
-    const detail = result && typeof result === "object" ? result : { result };
-    await sql`UPDATE job_runs SET status = 'ok', finished_at = now(), detail = ${sql.json(detail as never)} WHERE id = ${row!.id}`;
+    const detail = result && typeof result === "object" && !Array.isArray(result) ? result : { result };
+    await sql`UPDATE job_runs SET status = 'ok', finished_at = now(), detail = ${sql.json(detail as never)} || jsonb_build_object('owner', detail->'owner') WHERE id = ${row!.id} AND status = 'running'`;
     return result;
   } catch (error) {
-    await sql`UPDATE job_runs SET status = 'failed', finished_at = now(), error = ${String(error).slice(0, 4000)} WHERE id = ${row!.id}`;
+    // A paid-call budget is an expected pause, not a failure: record it as skipped so the runs page
+    // keeps its alarms for real failures. Other errors stay failures.
+    const skipped = failureKind(error) === "budget";
+    await sql`UPDATE job_runs SET status = ${skipped ? "skipped" : "failed"}, finished_at = now(), error = ${String(error).slice(0, 4000)} WHERE id = ${row!.id} AND status = 'running'`;
     throw error;
   }
 }

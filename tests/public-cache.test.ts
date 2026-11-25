@@ -3,6 +3,7 @@
 import { tag } from './setup.ts';
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
+import { ENGLISH } from '@aihot/contracts/english';
 import { sql, closeDb } from '@aihot/backend/db';
 import { stopBoss } from '@aihot/backend/jobs/queue';
 import { publishArticle } from '@aihot/backend/publication/publish';
@@ -26,8 +27,8 @@ before(async () => {
     const entry = {itemId:id,title:'公开缓存示例',summary:'公开缓存摘要'};
     const content = kind==='daily' ? {sections:[{label:'模型',items:[entry]}],flashes:[]}
       : {headline:'公开缓存示例',themes:[{heading:'模型',storyRefs:[entry]}]};
-    await sql`INSERT INTO reports(kind,key,window_start,window_end,content,origin,generated_at)
-      VALUES(${kind!},${key!},now()-interval '1 day',now(),${sql.json(content)},'manual',now())`;
+    await sql`INSERT INTO reports(kind,key,window_start,window_end,content,generated_at)
+      VALUES(${kind!},${key!},now()-interval '1 day',now(),${sql.json(content)},now())`;
   }
 });
 after(async()=>{await app.close();await stopBoss();await closeDb();});
@@ -38,7 +39,11 @@ test('mutable content never authorizes a reader to reuse stale data beyond the w
     '/api/v1/agent/daily/2099-10-04','/api/v1/agent/weekly/2099-W40',
     '/feed.xml','/feed/full.xml','/feed/all.xml','/feed/daily.xml','/feed/weekly.xml','/feed/monthly.xml',
     `/items/${id}/markdown`, `/og/items/${id}.png`, `/og/posters/${id}.png`,
-    '/og/reports/daily/2099-10-04.png','/og/reports/weekly/2099-W40.png','/og/reports/monthly/2099-10.png'];
+    '/og/reports/daily/2099-10-04.png','/og/reports/weekly/2099-W40.png','/og/reports/monthly/2099-10.png',
+    // The English edition's twins: the same content in English.
+    ...(ENGLISH ? ['/api/v1/items?lang=en','/api/v1/dailies/2099-10-04?lang=en','/api/v1/agent/daily/2099-10-04?lang=en',
+      '/en/feed.xml','/en/feed/full.xml','/en/feed/daily.xml', `/og/en/items/${id}.png`, `/og/en/posters/${id}.png`,
+      '/og/en/reports/daily/2099-10-04.png','/og/en/reports/weekly/2099-W40.png','/og/en/reports/monthly/2099-10.png'] : [])];
   const failures:string[]=[];
   for (const url of paths) {
     const response=await app.inject({method:'GET',url});

@@ -2,8 +2,8 @@
 import type { PgBoss } from "pg-boss";
 import { groupArticle } from "../events/group.ts";
 import { composeStoryDigest } from "../events/digest.ts";
-import { groupingPriority, settleNonEditorial } from "./content.ts";
-import { enqueue, ensureQueue, QUEUES, work } from "./queue.ts";
+import { settleNonEditorial } from "./content.ts";
+import { articlePriority, enqueue, ensureQueue, QUEUES, work } from "./queue.ts";
 import { sql } from "../db.ts";
 import { isHistorical, newsCondition } from "../content/materials.ts";
 
@@ -26,7 +26,8 @@ export async function registerEventJobs(boss: PgBoss) {
  * Material that needs grouping (needsGrouping: a passed report, a discussion post while it is news)
  * left pending without a job: a lost job, or a wait groupArticle leaves pending (budget, provider
  * outage, shutdown) that outlasted the job's retries. Terminal failures need a receipt release or an
- * explicit rerun.
+ * explicit rerun. No separate cross-hour retry ladder for failed rows (#400): refusals and
+ * uncertain paid outcomes must keep their existing recovery paths.
  */
 export async function sweepUngrouped(): Promise<{ enqueued: number }> {
   await ensureQueue(QUEUES.group);
@@ -43,7 +44,7 @@ export async function sweepUngrouped(): Promise<{ enqueued: number }> {
     let enqueued = 0;
     for (const row of rows) {
       const signal = row.participation_mode !== "editorial";
-      const priority = groupingPriority({ signal, historical: isHistorical(row) });
+      const priority = articlePriority({ signal, historical: isHistorical(row) });
       const data = signal ? { articleId: row.id, signalOnly: true } : { articleId: row.id };
       if (await enqueue(QUEUES.group, data, { singletonKey: row.id, priority }, tx)) enqueued += 1;
     }

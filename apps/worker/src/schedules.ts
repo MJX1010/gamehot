@@ -5,6 +5,8 @@ import { ensureQueue, recordRun } from "@aihot/backend/jobs/queue";
 import { serverModules, type Scheduled } from "@aihot/backend/modules";
 import { sweepUnprocessed } from "@aihot/backend/jobs/content";
 import { translatePending } from "@aihot/backend/editorial/translate";
+import { translateEnglish } from "@aihot/backend/editorial/english";
+import { ENGLISH } from "@aihot/contracts/english";
 import { adaptIntervals, scheduleDueSources } from "@aihot/backend/sources/collect";
 import { scheduleMpReconcile } from "@aihot/backend/sources/mp";
 import { followXRenames } from "@aihot/backend/sources/x-renames";
@@ -15,6 +17,7 @@ import { linkRelatedStories } from "@aihot/backend/events/consolidate";
 import { composeDueReports } from "@aihot/backend/reports/compose";
 import { dailyRetention } from "@aihot/backend/operations/retention";
 import { submitIndexNow } from "@aihot/backend/operations/indexnow";
+import { submitBaiduPush } from "@aihot/backend/operations/baidu-push";
 import { checkAlerts, sendDigest } from "@aihot/backend/operations/alerts";
 import { recoverStaleWork } from "@aihot/backend/operations/recover";
 import { forwardPendingFeedback } from "@aihot/backend/operations/feedback";
@@ -27,6 +30,8 @@ const ENGINE_SCHEDULES: Scheduled[] = [
   { name: "content.sweep", cron: "*/5 * * * *", run: sweepUnprocessed },
   // Full-text translations of newly selected items (model calls; off with MODEL_CALLS_ENABLED=false).
   { name: "content.translate", cron: "*/5 * * * *", run: () => translatePending() },
+  // English for what the site shows in Chinese, on a site with an English edition (model calls, as above).
+  { name: "content.english", cron: "2-59/5 * * * *", run: () => translateEnglish(), when: () => ENGLISH !== null },
   { name: "hot.rank", cron: "*/5 * * * *", run: () => computeHotRanking() },
   { name: "hot.snapshot", cron: "2 * * * *", run: () => snapshotHeat() },
   { name: "stories.links", cron: "12 * * * *", run: linkRelatedStories },
@@ -38,6 +43,8 @@ const ENGINE_SCHEDULES: Scheduled[] = [
   // IndexNow for added, changed and removed discovery URLs, hourly so a new story or report reaches Bing,
   // and the AI answers that search it, within the hour (off unless INDEXNOW_SUBMIT_ENABLED).
   { name: "seo.indexnow", cron: "50 * * * *", missed: "once", run: () => submitIndexNow() },
+  // Baidu's push for URLs new since the last run, within its daily quota (off unless BAIDU_PUSH_ENABLED).
+  { name: "seo.baidu-push", cron: "55 * * * *", missed: "once", run: () => submitBaiduPush() },
   // Work a stopped process left half way becomes visible, and unknown paid requests get their one
   // automatic release; ops.alerts runs in parallel and sees the result by its next run at the latest.
   { name: "ops.recover", cron: "*/10 * * * *", run: () => recoverStaleWork() },
@@ -51,7 +58,7 @@ const ENGINE_SCHEDULES: Scheduled[] = [
   ...(collecting
     ? [
         { name: "sources.schedule", cron: "* * * * *", run: () => scheduleDueSources() },
-        { name: "sources.adapt-intervals", cron: "20 4 * * *", run: adaptIntervals },
+        { name: "sources.adapt-intervals", cron: "20 4 * * *", missed: "once" as const, run: adaptIntervals },
         // X accounts quiet for a day: a renamed one is followed to its new handle (SocialData, paid per lookup).
         { name: "sources.x-renames", cron: "50 4 * * *", missed: "once" as const, run: () => followXRenames() },
         // Icons are read from the sources' own sites, so they stop with collection.

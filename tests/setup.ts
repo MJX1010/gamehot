@@ -18,6 +18,7 @@ process.env.SESSION_SECRET ??= "test-session-secret-0123456789";
 process.env.IMG_PROXY_SIGN_SECRET ??= "test-img-secret-0123456789";
 process.env.FEISHU_CONTENT_PUSH_ENABLED = "false";
 process.env.INDEXNOW_SUBMIT_ENABLED = "false";
+process.env.BAIDU_PUSH_ENABLED = "false";
 process.env.LOG_LEVEL ??= "error";
 // Paid providers are local stubs in these tests: calls and collection may run (the valves default off).
 process.env.MODEL_CALLS_ENABLED ??= "true";
@@ -58,6 +59,7 @@ export async function stub(answer: (hit: number, req: { url: string; body: strin
     req.on("end", async () => {
       hits += 1;
       const out = await answer(hits, { url: req.url ?? "/", body: Buffer.concat(chunks).toString("utf8") });
+      if (out === LOST) return void req.socket.destroy();
       const reply = out instanceof Reply ? out : { status: 200, json: out };
       res.writeHead(reply.status, { "content-type": "application/json" });
       res.end(JSON.stringify(reply.json));
@@ -85,6 +87,9 @@ export async function embeddingsStub() {
   process.env.DASHSCOPE_API_KEY = "test-key";
   return server;
 }
+
+/** A stub answer that never comes: the connection drops once the request is in, so its outcome is unknown. */
+export const LOST = Symbol("lost");
 
 /** A stub answer with its own status (e.g. a provider's 503); anything else is a 200 JSON body. */
 export class Reply {

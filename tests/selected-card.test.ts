@@ -28,7 +28,7 @@ const SPACE = { title: "OpenAI 演示 ChatGPT Space 团队协作用法", summary
 
 async function selected(category: string, reason: string | null, copy = SPACE) {
   const { articleId } = await upsertMaterial({ sourceId: SOURCE, url: `https://example.org/${T}/${category}`,
-    title: `${T} ${category}`, bodyText: "Body.", bodyStatus: "ok", via: "fetch", publishedAt: new Date() });
+    title: `${T} ${category}`, bodyText: "Body.", bodyStatus: "ok", via: "fetch", publishedAt: new Date(Date.now() - 60_000) });
   await sql`INSERT INTO analyses(article_id,input_revision,origin,relevance,category,title_zh,summary_zh,reason_zh,score,selected)
     VALUES (${articleId},1,'rule','pass',${category},${copy.title},${copy.summary},${reason},90,true)`;
   await sql`UPDATE articles SET grouping_status='complete',grouped_at=now(),selection_adds_value=true WHERE id=${articleId}`;
@@ -67,7 +67,7 @@ test("without a reason the card goes from the summary straight to the buttons", 
 });
 
 test("markdown characters in the model's words show as written", async () => {
-  const card = await selected("paper", null, { title: "延迟 <1 秒的 *Flash* 模型", summary: "支持 [beta] 接口与 `code` 示例。" });
+  const card = await selected("tech-art", null, { title: "延迟 <1 秒的 *Flash* 模型", summary: "支持 [beta] 接口与 `code` 示例。" });
   assert.ok(card.body.elements[0].content.startsWith("**延迟 &#60;1 秒的 &#42;Flash&#42; 模型**"));
   assert.equal(card.body.elements[2].content, "支持 &#91;beta&#93; 接口与 &#96;code&#96; 示例。");
 });
