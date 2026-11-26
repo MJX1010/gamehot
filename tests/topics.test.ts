@@ -8,72 +8,28 @@
 // - a technical-direction topic stops taking its tags;
 // - withdrawn or not yet released articles appear in a list or a count;
 // - an article or story page names a topic its reports do not belong to;
+// - an article page cannot tell which of its tags are a topic's own, so they link to filtered lists;
 // - a topic without content has no page, or an unknown slug or a page past the end has one.
-import { tag } from "./setup.ts";
+import { fact, mediaSource as MEDIA, officialSource as OFFICIAL, report, story, topicTag as T } from "./topic-fixtures.ts";
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
 import { after, before, test } from "node:test";
 import { closeDb, sql } from "@aihot/backend/db";
-import { upsertMaterial } from "@aihot/backend/content/materials";
 import { stopBoss } from "@aihot/backend/jobs/queue";
-import { publishArticle } from "@aihot/backend/publication/publish";
 import { TOPICS, loadTopicPage, listTopicSummaries, topicsOfStory } from "@aihot/backend/publication/topics";
 import { buildApp } from "../apps/api/src/app.ts";
 
-const T = tag();
-const OFFICIAL = `test-topics-official-${T}`;
-const MEDIA = `test-topics-media-${T}`;
 const app = await buildApp();
 
 before(async () => {
-  await sql`INSERT INTO sources (id, name, kind, tier, participation_mode, first_party, next_fetch_at) VALUES
-    (${OFFICIAL}, 'Official', 'rss', 'T1', 'editorial', true, '2100-01-01'),
-    (${MEDIA}, 'Media', 'rss', 'T2', 'editorial', false, '2100-01-01')`;
+  await sql`INSERT INTO sources (id, name, kind, tier, participation_mode, next_fetch_at) VALUES
+    (${OFFICIAL}, 'Official', 'rss', 'T1', 'editorial', '2100-01-01'),
+    (${MEDIA}, 'Media', 'rss', 'T2', 'editorial', '2100-01-01')`;
 });
 after(async () => {
   await app.close();
   await stopBoss();
   await closeDb();
 });
-
-let n = 0;
-interface Report {
-  source?: string;
-  at: Date;
-  title: string;
-  originalTitle?: string;
-  subjects?: string[];
-  tags?: string[];
-  score?: number;
-  selected?: boolean;
-  fact?: number;
-  category?: string;
-}
-
-/** A published report; `fact` links it to a fact before publishing, as grouping would. */
-async function report(r: Report): Promise<string> {
-  n += 1;
-  const { articleId } = await upsertMaterial({
-    sourceId: r.source ?? MEDIA, url: `https://example.com/topics-${T}-${n}`, title: r.originalTitle ?? r.title, bodyText: "body", bodyHtml: "<p>body</p>", bodyStatus: "ok", via: "fetch", publishedAt: r.at,
-  });
-  await sql`UPDATE articles SET discovered_at = ${r.at}, timeline_at = ${r.at}, grouped_at = now() WHERE id = ${articleId}`;
-  await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, category, title_zh, summary_zh, score, selected, subjects, tags)
-            VALUES (${articleId}, 1, 'rule', 'pass', ${r.category ?? "releases"}, ${r.title}, ${`摘要 ${n}`}, ${r.score ?? 80}, ${r.selected ?? true}, ${r.subjects ?? []}, ${[r.category === "tools-engines" ? "产品更新" : r.category === "paper" ? "论文/研究" : r.category === "tip" ? "教程/实践" : r.category === "industry" ? "行业动态" : r.category === "opinion" ? "大佬观点" : "游戏发行", ...(r.tags ?? [])]})`;
-  if (r.fact) await sql`INSERT INTO fact_articles (fact_id, article_id, role) VALUES (${r.fact}, ${articleId}, 'report')`;
-  await publishArticle(articleId, { releasedAt: new Date(r.at.getTime() + 60_000) });
-  return articleId;
-}
-
-async function story(title: string): Promise<{ id: number; publicId: string }> {
-  const publicId = randomUUID();
-  const [s] = await sql<{ id: number }[]>`INSERT INTO stories (public_id, title, first_report_at, latest_at) VALUES (${publicId}, ${title}, now(), now()) RETURNING id`;
-  return { id: s!.id, publicId };
-}
-
-async function fact(storyId: number | null, title: string): Promise<number> {
-  const [f] = await sql<{ id: number }[]>`INSERT INTO facts (public_id, story_id, title) VALUES (${`f-${T}-${randomUUID()}`}, ${storyId}, ${title}) RETURNING id`;
-  return f!.id;
-}
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3600_000);
 const ids = (items: Array<{ id: string }>) => items.map((i) => i.id);
@@ -161,4 +117,15 @@ test("every topic has a page; unknown topics and pages past the end have none", 
   const body = JSON.parse(index.body) as { groups: Array<{ key: string }>; topics: Array<{ slug: string }> };
   assert.deepEqual(body.groups.map((g) => g.key), ["company", "field", "genre"]);
   assert.deepEqual(body.topics.map((t) => t.slug).sort(), TOPICS.map((t) => t.slug).sort(), "the index lists every topic");
+});
+
+test("an article page says which of its tags are a topic's own", async () => {
+  // A direction's or a form's tags, and the tag cards show for a company (its subject tag is never shown).
+  const id = await report({ at: hoursAgo(3), title: `Nintendo 开源智能体框架 ${T}`, subjects: ["nintendo", "sony"], tags: ["独立游戏", "渲染", "Nintendo", "Sony", "框架"] });
+  const res = await app.inject({ method: "GET", url: `/api/site/items/${id}` });
+  const body = JSON.parse(res.body) as { tags: string[]; tagTopics: Record<string, string>; topics: Array<{ slug: string }> };
+  assert.deepEqual(body.tags, ["游戏发行", "独立游戏", "渲染", "Nintendo", "Sony", "框架"]);
+  assert.deepEqual(body.tagTopics, { "游戏发行": "releases", 独立游戏: "indie", "渲染": "tech-art", Nintendo: "nintendo", Sony: "sony" });
+  // The company its title does not name is a topic of the tag, not of the article.
+  assert.deepEqual(body.topics.map((t) => t.slug), ["nintendo", "indie", "tech-art", "releases"]);
 });

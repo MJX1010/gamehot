@@ -79,6 +79,13 @@ export const TAG_SYNONYMS: Readonly<Record<string, string>> = {
   蒸汽: "Steam", 史低: "Steam", PS5: "PlayStation", PS4: "PlayStation", Series: "Xbox",
 };
 
+/** 网页前端展示的标签名：把内部斜杠写法换成自然短词，null 表示不对读者展示（存储、接口与后台仍保留原标签）。 */
+export const TAG_DISPLAY: Readonly<Record<string, string | null>> = {
+  "网游/MMO": "网游",
+  "发行/渠道": "发行渠道",
+  "非游戏": null,
+};
+
 // ── 公司与主体 ──────────────────────────────────────────────────────────────────────────
 
 /**

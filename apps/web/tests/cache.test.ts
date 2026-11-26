@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { ADMIN } from "@aihot/site";
 import { SIGN_IN_HOME } from "@aihot/contracts/admin";
+import { ENGLISH } from "@aihot/contracts/english";
+import { isPrivatePage } from "@aihot/contracts/http-policy";
 import { CATEGORY_KEYS } from "@aihot/contracts/taxonomy";
 import { UNSAFE_decodeViaTurboStream } from "react-router";
 import { fakeApi, startWebServer, type WebServer } from "./web-server.ts";
@@ -10,17 +12,11 @@ import { fakeApi, startWebServer, type WebServer } from "./web-server.ts";
 let web: WebServer;
 let origin: string;
 let deadline: number;
-/** Root metadata answers only after the selected deadline has passed: a slow sibling loader. */
-let metaAfterDeadline = false;
 const apiCookies: Array<string | undefined> = [];
 const api = fakeApi(async (url, res, req) => {
   apiCookies.push(req.headers.cookie);
-  if (url.pathname === "/api/site/meta") {
-    // Past the deadline on the wall clock the server reads: timers run on another clock, and a CI VM
-    // stepping its wall clock back mid-wait would otherwise answer before the deadline.
-    while (metaAfterDeadline && Date.now() < deadline * 1000 + 50) await new Promise((resolve) => setTimeout(resolve, deadline * 1000 + 50 - Date.now()));
-    return { changelogVersion: "2026-09-28T12:00" };
-  }
+  // The English edition's answers (/api/site/en/…) as the Chinese ones here.
+  if (url.pathname.startsWith("/api/site/en/")) url.pathname = url.pathname.replace("/api/site/en/", "/api/site/");
   if (url.pathname === "/api/site/timeline") {
     const filters = { channel: "all", category: url.searchParams.get("category"), tag: null };
     res.setHeader("X-Accel-Expires", `@${deadline}`);
@@ -28,6 +24,9 @@ const api = fakeApi(async (url, res, req) => {
     return { filters, cards: [], nextCursor: null, dayCounts: [], hot: null };
   }
   if (url.pathname === "/api/site/hot") return { entries: [] };
+  if (url.pathname === "/api/site/pool") {
+    return { filters: { channel: "all", category: null, tag: null, q: null, tab: null }, items: [], tagTopics: {}, page: Number(url.searchParams.get("page") ?? 1), pageCount: 3, total: 0, todayCount: 0, freshness: new Date().toISOString() };
+  }
   if (url.pathname === "/api/site/echo-client") return { forwarded: req.headers["x-forwarded-for"], real: req.headers["x-real-ip"] };
   if (url.pathname === "/api/site/download") {
     res.setHeader("Content-Type", "text/markdown; charset=utf-8");
@@ -136,7 +135,18 @@ test("admin data and actions never become public cache entries", async () => {
   await action.text();
 });
 
-test("browser freshness shares the selected deadline, including slow sibling loaders", async () => {
+test("gray pages are private like the admin's, whatever their route asks for", async () => {
+  for (const pathname of ["/preview", "/preview/", "/preview/models", "/Preview/models", "/admin", "/admin/runs", "/admin/expiry"]) assert.equal(isPrivatePage(pathname), true, pathname);
+  for (const pathname of ["/", "/previews", "/all", "/items/preview", "/administer"]) assert.equal(isPrivatePage(pathname), false, pathname);
+  for (const pathname of ["/preview/missing", "/preview/missing.data", "/preview/missing.data?_routes=root"]) {
+    const res = await fetch(origin + pathname);
+    assert.equal(res.headers.get("Cache-Control"), "private, no-store", pathname);
+    assert.equal(res.headers.get("X-Accel-Expires"), "0", pathname);
+    await res.text();
+  }
+});
+
+test("browser freshness shares the selected deadline and never renews an expired upstream result", async () => {
   const savedDeadline = deadline;
   try {
     deadline = Math.floor(Date.now() / 1000) + 20;
@@ -152,10 +162,7 @@ test("browser freshness shares the selected deadline, including slow sibling loa
       assert.doesNotMatch(cc, /stale/);
       await res.text();
     }
-    // The selected loader initially grants a positive TTL (at least a whole second), but root metadata
-    // finishes after it.
-    deadline = Math.floor(Date.now() / 1000) + 2;
-    metaAfterDeadline = true;
+    deadline = Math.floor(Date.now() / 1000) - 1;
     await Promise.all(["/", "/_.data?_routes=routes%2Fhome"].map(async (pathname) => {
       const res = await fetch(origin + pathname);
       assert.equal(res.status, 200);
@@ -165,7 +172,27 @@ test("browser freshness shares the selected deadline, including slow sibling loa
     }));
   } finally {
     deadline = savedDeadline;
-    metaAfterDeadline = false;
+  }
+});
+
+// A withdrawal purges the list pages at their bare addresses (modules/ops/backend/purge.ts): a filtered or later page
+// is an entry of its own at the edge, gone only when it expires. Check every language the site serves.
+test("filtered and later list pages stay in shared caches a minute at most", async () => {
+  const pathnames = ["/?tag=x", "/?category=tools-engines", "/_.data?tag=x", "/all?page=2", "/all.data?page=2"];
+  if (ENGLISH) pathnames.push("/en?tag=x", "/en.data?tag=x", "/en/all?page=2", "/en/all.data?page=2");
+  const savedDeadline = deadline;
+  try {
+    deadline = Math.floor(Date.now() / 1000) + 3600;
+    for (const pathname of pathnames) {
+      const res = await fetch(origin + pathname);
+      const cc = res.headers.get("Cache-Control") ?? "";
+      assert.equal(res.status, 200, pathname);
+      const shared = Number(cc.match(/(?:^|,)\s*s-maxage=(\d+)/)?.[1] ?? 0);
+      assert.ok(shared <= 60, `${pathname}: ${cc}. A withdrawal clears this page only when it expires (purge.ts): keep it within a minute.`);
+      await res.text();
+    }
+  } finally {
+    deadline = savedDeadline;
   }
 });
 
@@ -195,20 +222,20 @@ test("browser caching preserves noindex and private sign-in responses", async ()
   assert.match(await feedback.text(), /name="robots" content="noindex/);
   assert.equal(feedback.headers.get("Cache-Control"), "public, max-age=300, s-maxage=300, must-revalidate");
   const login = await fetch(origin + "/admin/login");
-  assert.equal(login.status, 200);
+  assert.equal(login.status, ADMIN ? 200 : 404, "a site without admin pages has no admin sign-in either");
   assert.equal(login.headers.get("Cache-Control"), "private, no-store");
-  assert.equal(login.headers.get("X-Robots-Tag"), "noindex, nofollow");
+  if (ADMIN) assert.equal(login.headers.get("X-Robots-Tag"), "noindex, nofollow");
   await login.text();
 });
 
-test("a signed-in admin is sent past the sign-in page", async () => {
+test("a signed-in admin is sent past the sign-in page", { skip: !ADMIN && "this site has no admin pages" }, async () => {
   const api = fakeApi((url, res, req) => {
     if (url.pathname === "/api/admin/me") {
       if (req.headers.cookie?.includes("aihot_admin=fixture")) return { name: "Fixture admin", csrf: "fixture", dev: false };
       res.statusCode = 401;
       return { code: "unauthorized" };
     }
-    if (url.pathname === "/api/auth/options") return { password: true, feishu: false };
+    if (url.pathname === "/api/auth/options") return { password: true };
   });
   const signedIn = await startWebServer(api);
   try {
@@ -222,7 +249,7 @@ test("a signed-in admin is sent past the sign-in page", async () => {
       await away.text();
     }
     const anonymous = await fetch(`${signedIn.origin}/admin/login?return=%2Fadmin`, { redirect: "manual" });
-    assert.equal(anonymous.status, 200, "without a session the page still offers the ways in");
+    assert.equal(anonymous.status, 200, "without a session the page still offers the password sign-in");
     await anonymous.text();
   } finally {
     await signedIn.stop();
