@@ -1,7 +1,8 @@
-// OpenAI-compatible chat calls, always through receipts. One model is enough: `default` is whatever the
+// Chat calls, always through receipts. One model is enough: `default` is whatever the
 // deployment names in LLM_BASE_URL / LLM_API_KEY / LLM_MODEL, and every capability uses it unless the
 // site, an environment variable or the admin's model page picks one of the site's named presets
-// (site/models.ts).
+// (site/models.ts). The default protocol is OpenAI-compatible Chat Completions; set
+// LLM_API_FORMAT=anthropic (or a preset's apiFormat) to use Anthropic Messages.
 import type { z } from "zod";
 import type { ModelPreset } from "@aihot/contracts/site-config";
 import { PRESETS } from "@aihot/site/models";
@@ -12,6 +13,8 @@ import {
   type ReceiptRequest,
 } from "./receipts.ts";
 import { enterModelCircuit, recordModelHealth, type CircuitPermit } from "./circuit.ts";
+import { buildChatRequest, isContentFilter, isOutputLengthLimit, readChatContent, type ContentPart } from "./llm-format.ts";
+export type { ApiFormat, ContentPart } from "./llm-format.ts";
 
 export interface ModelSpec extends ModelPreset {
   key: string;
@@ -45,8 +48,6 @@ export const MODELS: Record<string, ModelSpec> = {
   // The pack's named presets, each with its own address and key.
   ...Object.fromEntries(Object.entries(PRESETS).map(([key, preset]) => [key, { key, ...preset }])),
 };
-
-export type ContentPart = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
 
 export interface ChatJsonOptions<S extends z.ZodType> {
   model: string;
@@ -172,19 +173,10 @@ async function chatOnce<S extends z.ZodType>(opts: ChatJsonOptions<S>, circuit =
   const { request, temperature, maxTokens, userText } = requestFor(opts, spec);
   const timeoutMs = opts.timeoutMs ?? (circuit ? FAILOVER_TIMEOUT_MS : TIMEOUT_MS);
   let permit: CircuitPermit;
-  const body: Record<string, unknown> = {
-    model: spec.model,
-    messages: [
-      // A prompt given as one user message (the title/summary prompts) has no system message.
-      ...(opts.system ? [{ role: "system", content: opts.system }] : []),
-      // Multimodal parts go through as parts; plain objects are sent as JSON text.
-      { role: "user", content: typeof opts.user === "string" || Array.isArray(opts.user) ? opts.user : userText },
-    ],
-    temperature,
-    max_tokens: maxTokens,
-    ...(spec.jsonMode && opts.json !== false ? { response_format: { type: "json_object" } } : {}),
-    ...(spec.extra ?? {}),
-  };
+  const call = buildChatRequest({
+    spec, baseUrl, apiKey, model: spec.model, system: opts.system, user: opts.user, userText,
+    temperature, maxTokens, json: opts.json, jsonMode: spec.jsonMode, extra: spec.extra,
+  });
 
   const receipt = await paidRequest(
     { ...request, fallbackFor },
@@ -193,10 +185,10 @@ async function chatOnce<S extends z.ZodType>(opts: ChatJsonOptions<S>, circuit =
       let res: Response;
       let text: string;
       try {
-        res = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+        res = await fetch(call.url, {
           method: "POST",
-          headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
-          body: JSON.stringify(body),
+          headers: call.headers,
+          body: JSON.stringify(call.body),
           signal: AbortSignal.timeout(timeoutMs),
         });
         text = await res.text();
@@ -215,8 +207,8 @@ async function chatOnce<S extends z.ZodType>(opts: ChatJsonOptions<S>, circuit =
       } catch {
         json = { unparsable: text.slice(0, 20000) };
       }
-      const finishReason = (json.choices as Array<{ finish_reason?: string }> | undefined)?.[0]?.finish_reason;
-      if (finishReason === "content_filter" || finishReason === "sensitive") {
+      const { finishReason } = readChatContent(call.format, json);
+      if (isContentFilter(finishReason)) {
         throw new ProviderRejectedError(`${spec.service} finish_reason=${finishReason}: content_filter`, 200, false, false);
       }
       const usage = (json.usage as Record<string, unknown> | undefined) ?? null;
@@ -230,16 +222,16 @@ async function chatOnce<S extends z.ZodType>(opts: ChatJsonOptions<S>, circuit =
     circuit ? async tx => { permit = await enterModelCircuit(tx, spec.service, timeoutMs); } : undefined,
   );
 
-  const response = receipt.response as { choices?: Array<{ message?: { content?: string }; finish_reason?: string }>; usage?: Record<string, unknown> };
-  const content = response.choices?.[0]?.message?.content ?? "";
+  const response = receipt.response as Record<string, unknown> & { usage?: Record<string, unknown> };
+  const { text: content, finishReason } = readChatContent(call.format, response);
   let parsed: z.infer<S>;
   try {
     parsed = opts.schema.parse(opts.parse ? opts.parse(content) : extractJson(content));
   } catch (error) {
     // Unusable output: record it and let a later attempt pay for a fresh answer. A reasoning model that
     // reasoned up to the output limit leaves an empty or cut-off answer; say so, and where to give it room.
-    const detail = response.choices?.[0]?.finish_reason === "length"
-      ? `output token limit reached (finish_reason=length): a reasoning model may have spent it reasoning; give it room with ${spec.key === "default" ? "LLM_REASONING_TOKENS" : `reasoningTokens on preset ${spec.key}`}. ${String(error)}`
+    const detail = isOutputLengthLimit(call.format, finishReason)
+      ? `output token limit reached (finish_reason=${finishReason}): a reasoning model may have spent it reasoning; give it room with ${spec.key === "default" ? "LLM_REASONING_TOKENS" : `reasoningTokens on preset ${spec.key}`}. ${String(error)}`
       : String(error);
     await rejectReceivedResponse(receipt.receiptId, `unusable output: ${detail.slice(0, 500)}`);
     throw new ModelOutputError(`Model ${opts.model} returned unusable output for ${opts.subject}: ${detail.slice(0, 300)}`, receipt.receiptId);

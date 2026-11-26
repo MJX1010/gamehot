@@ -4,6 +4,8 @@ export interface ModelPreset {
   model: string;
   baseUrlEnv: string;
   apiKeyEnv: string;
+  /** Chat protocol. Default and omitted mean OpenAI-compatible Chat Completions. */
+  apiFormat?: "openai" | "anthropic";
   /** Extra request fields, e.g. switching reasoning off for short structured tasks. */
   extra?: Record<string, unknown>;
   /** Output tokens added to every call's own limit for a reasoning model, which reasons before it answers. */

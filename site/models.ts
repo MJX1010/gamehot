@@ -1,4 +1,6 @@
 // 这个站用哪些模型。框架自带一个 `default`：环境变量 LLM_BASE_URL / LLM_API_KEY / LLM_MODEL 指定的模型。
+// 默认走 OpenAI 兼容的 /chat/completions；若网关是 Anthropic Messages，给 default 设 LLM_API_FORMAT=anthropic，
+// 或在具名预设上写 apiFormat: "anthropic"。
 // 这里再列出具名的模型（每个用自己的地址和密钥环境变量），以及每一步默认用哪个；没写的步骤用 default。
 // 部署时还可以用环境变量（PREFILTER_MODEL、SCORE_MODEL……）或后台的“模型与评测”页逐步改选。
 
